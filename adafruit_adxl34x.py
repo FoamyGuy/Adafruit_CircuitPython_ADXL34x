@@ -259,6 +259,13 @@ class ADXL345:
 
         return self._event_status
 
+    @property
+    def motion_event(self) -> bool:
+        if "motion" in self._enabled_interrupts:
+            interrupt_source_register = self._read_clear_interrupt_source()
+            return interrupt_source_register & _INT_ACT > 0
+        return False
+
     def enable_motion_detection(self, *, threshold: int = 18):
         """
         The activity detection parameters.
@@ -331,6 +338,16 @@ class ADXL345:
         active_interrupts &= ~_INT_FREE_FALL
         self._write_register_byte(_REG_INT_ENABLE, active_interrupts)
         self._enabled_interrupts.pop("freefall")
+
+    @property
+    def tap_event(self) -> bool:
+        if "tap" in self._enabled_interrupts:
+            interrupt_source_register = self._read_clear_interrupt_source()
+            if self._enabled_interrupts["tap"] == 1:
+                return interrupt_source_register & _INT_SINGLE_TAP > 0
+            else:
+                return interrupt_source_register & _INT_DOUBLE_TAP > 0
+        return False
 
     def enable_tap_detection(
         self,
